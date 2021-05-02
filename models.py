@@ -46,13 +46,14 @@ class PerceptronModel(object):
         "*** YOUR CODE HERE ***"
         batch_size = 1
         full_accuracy = False
-        while not full_accuracy:   #Loop until 100% training accuracy has been achieved
+        while not full_accuracy:  # Loop until 100% training accuracy has been achieved
             full_accuracy = True
             for x, y in dataset.iterate_once(batch_size):
                 examples = self.get_prediction(x)
                 if examples != nn.as_scalar(y):
                     self.get_weights().update(x, nn.as_scalar(y))
                     full_accuracy = False
+
 
 class RegressionModel(object):
     """
@@ -122,16 +123,14 @@ class RegressionModel(object):
                     self.parametersList[i].update(gradWRTList[i], -self.learningRate)
                 loss = nn.as_scalar(loss)
 
+
 class DigitClassificationModel(object):
     """
     A model for handwritten digit classification using the MNIST dataset.
-
     Each handwritten digit is a 28x28 pixel grayscale image, which is flattened
     into a 784-dimensional vector for the purposes of this model. Each entry in
     the vector is a floating point number between 0 and 1.
-
     The goal is to sort each digit into one of 10 classes (number 0 through 9).
-
     (See RegressionModel for more information about the APIs of different
     methods here. We recommend that you implement the RegressionModel before
     working on this part of the project.)
@@ -140,15 +139,28 @@ class DigitClassificationModel(object):
     def __init__(self):
         # Initialize your model parameters here
         "*** YOUR CODE HERE ***"
+        self.inputSize = 784
+        self.outputSize = 10
+
+        self.hiddenLayerSize1 = 200
+        self.hiddenLayerSize2 = 100
+        self.batchSize = 200
+        self.learningRate = 0.1
+
+        self.W1 = nn.Parameter(self.inputSize, self.hiddenLayerSize1)
+        self.W2 = nn.Parameter(self.hiddenLayerSize1, self.hiddenLayerSize2)
+        self.W3 = nn.Parameter(self.hiddenLayerSize2, self.outputSize)
+        self.b1 = nn.Parameter(1, self.hiddenLayerSize1)
+        self.b2 = nn.Parameter(1, self.hiddenLayerSize2)
+        self.b3 = nn.Parameter(1, self.outputSize)
+        self.parametersList = [self.W1, self.W2, self.W3, self.b1, self.b2, self.b3]
 
     def run(self, x):
         """
         Runs the model for a batch of examples.
-
         Your model should predict a node with shape (batch_size x 10),
         containing scores. Higher scores correspond to greater probability of
         the image belonging to a particular class.
-
         Inputs:
             x: a node with shape (batch_size x 784)
         Output:
@@ -156,37 +168,41 @@ class DigitClassificationModel(object):
                 (also called logits)
         """
         "*** YOUR CODE HERE ***"
-        batch_size = 1
-        full_accuracy = False
-        while not full_accuracy:  # Loop until 100% training accuracy has been achieved
-            full_accuracy = True
-            for x, y in dataset.iterate_once(batch_size):
-                examples = self.get_prediction(x)
-                if examples != nn.as_scalar(y):
-                    self.get_weights().update(x, nn.as_scalar(y))
-                    full_accuracy = False
-
+        xW1 = nn.Linear(x, self.W1)
+        firstLayer = nn.ReLU(nn.AddBias(xW1, self.b1))
+        xW2 = nn.Linear(firstLayer, self.W2)
+        secondLayer = nn.ReLU(nn.AddBias(xW2, self.b2))
+        xW3 = nn.Linear(secondLayer, self.W3)
+        predictedY = nn.AddBias(xW3, self.b3)
+        return predictedY
 
     def get_loss(self, x, y):
         """
         Computes the loss for a batch of examples.
-
         The correct labels `y` are represented as a node with shape
         (batch_size x 10). Each row is a one-hot vector encoding the correct
         digit class (0-9).
-
         Inputs:
             x: a node with shape (batch_size x 784)
             y: a node with shape (batch_size x 10)
         Returns: a loss node
         """
         "*** YOUR CODE HERE ***"
+        return nn.SoftmaxLoss(self.run(x), y)
 
     def train(self, dataset):
         """
         Trains the model.
         """
         "*** YOUR CODE HERE ***"
+        accuracy = 0
+        while accuracy <= 0.975:
+            for x, y in dataset.iterate_once(self.batchSize):
+                loss = self.get_loss(x, y)
+                gradientList = nn.gradients(loss, self.parametersList)
+                for i in range(len(gradientList)):
+                    self.parametersList[i].update(gradientList[i], -self.learningRate)
+            accuracy = dataset.get_validation_accuracy()
 
 
 class LanguageIDModel(object):
