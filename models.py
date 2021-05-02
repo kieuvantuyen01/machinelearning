@@ -4,7 +4,6 @@ class PerceptronModel(object):
     def __init__(self, dimensions):
         """
         Initialize a new Perceptron instance.
-
         A perceptron classifies data points as either belonging to a particular
         class (+1) or not (-1). `dimensions` is the dimensionality of the data.
         For example, dimensions=2 would mean that the perceptron must classify
@@ -21,26 +20,38 @@ class PerceptronModel(object):
     def run(self, x):
         """
         Calculates the score assigned by the perceptron to a data point x.
-
         Inputs:
             x: a node with shape (1 x dimensions)
         Returns: a node containing a single number (the score)
         """
         "*** YOUR CODE HERE ***"
+        return nn.DotProduct(self.w, x)
 
     def get_prediction(self, x):
         """
         Calculates the predicted class for a single data point `x`.
-
         Returns: 1 or -1
         """
         "*** YOUR CODE HERE ***"
+        dot_product = nn.as_scalar(self.run(x))
+        if dot_product >= 0:
+            return 1
+        return -1
 
     def train(self, dataset):
         """
         Train the perceptron until convergence.
         """
         "*** YOUR CODE HERE ***"
+        batch_size = 1
+        full_accuracy = False
+        while not full_accuracy:   #Loop until 100% training accuracy has been achieved
+            full_accuracy = True
+            for x, y in dataset.iterate_once(batch_size):
+                examples = self.get_prediction(x)
+                if examples != nn.as_scalar(y):
+                    self.get_weights().update(x, nn.as_scalar(y))
+                    full_accuracy = False
 
 class RegressionModel(object):
     """
