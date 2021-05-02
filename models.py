@@ -1,5 +1,6 @@
 import nn
 
+
 class PerceptronModel(object):
     def __init__(self, dimensions):
         """
@@ -59,14 +60,26 @@ class RegressionModel(object):
     numbers to real numbers. The network should be sufficiently large to be able
     to approximate sin(x) on the interval [-2pi, 2pi] to reasonable precision.
     """
+
     def __init__(self):
         # Initialize your model parameters here
         "*** YOUR CODE HERE ***"
 
+        self.hiddenLayerSize = 50
+        self.inputSize = 1
+        self.outputSize = 1
+        self.batchSize = 10
+        self.learningRate = 0.01
+
+        self.W1 = nn.Parameter(self.inputSize, self.hiddenLayerSize)
+        self.W2 = nn.Parameter(self.hiddenLayerSize, self.outputSize)
+        self.b1 = nn.Parameter(1, self.hiddenLayerSize)
+        self.b2 = nn.Parameter(1, self.outputSize)
+        self.parametersList = [self.W1, self.W2, self.b1, self.b2]
+
     def run(self, x):
         """
         Runs the model for a batch of examples.
-
         Inputs:
             x: a node with shape (batch_size x 1)
         Returns:
@@ -74,10 +87,16 @@ class RegressionModel(object):
         """
         "*** YOUR CODE HERE ***"
 
+        xW1 = nn.Linear(x, self.W1)
+        xW1b1 = nn.AddBias(xW1, self.b1)
+        firstLayer = nn.ReLU(xW1b1)
+        xW2 = nn.Linear(firstLayer, self.W2)
+        predictedY = nn.AddBias(xW2, self.b2)
+        return predictedY
+
     def get_loss(self, x, y):
         """
         Computes the loss for a batch of examples.
-
         Inputs:
             x: a node with shape (batch_size x 1)
             y: a node with shape (batch_size x 1), containing the true y-values
@@ -85,12 +104,23 @@ class RegressionModel(object):
         Returns: a loss node
         """
         "*** YOUR CODE HERE ***"
+        predictedY = self.run(x)
+        return nn.SquareLoss(predictedY, y)
 
     def train(self, dataset):
         """
         Trains the model.
         """
         "*** YOUR CODE HERE ***"
+
+        loss = 1
+        while loss >= 0.01:
+            for x, y in dataset.iterate_once(self.batchSize):
+                loss = self.get_loss(x, y)
+                gradWRTList = nn.gradients(loss, self.parametersList)
+                for i in range(len(self.parametersList)):
+                    self.parametersList[i].update(gradWRTList[i], -self.learningRate)
+                loss = nn.as_scalar(loss)
 
 class DigitClassificationModel(object):
     """
@@ -106,6 +136,7 @@ class DigitClassificationModel(object):
     methods here. We recommend that you implement the RegressionModel before
     working on this part of the project.)
     """
+
     def __init__(self):
         # Initialize your model parameters here
         "*** YOUR CODE HERE ***"
@@ -125,6 +156,16 @@ class DigitClassificationModel(object):
                 (also called logits)
         """
         "*** YOUR CODE HERE ***"
+        batch_size = 1
+        full_accuracy = False
+        while not full_accuracy:  # Loop until 100% training accuracy has been achieved
+            full_accuracy = True
+            for x, y in dataset.iterate_once(batch_size):
+                examples = self.get_prediction(x)
+                if examples != nn.as_scalar(y):
+                    self.get_weights().update(x, nn.as_scalar(y))
+                    full_accuracy = False
+
 
     def get_loss(self, x, y):
         """
@@ -147,6 +188,7 @@ class DigitClassificationModel(object):
         """
         "*** YOUR CODE HERE ***"
 
+
 class LanguageIDModel(object):
     """
     A model for language identification at a single-word granularity.
@@ -155,6 +197,7 @@ class LanguageIDModel(object):
     methods here. We recommend that you implement the RegressionModel before
     working on this part of the project.)
     """
+
     def __init__(self):
         # Our dataset contains words from five different languages, and the
         # combined alphabets of the five languages contain a total of 47 unique
