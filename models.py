@@ -144,7 +144,7 @@ class DigitClassificationModel(object):
 
         self.hiddenLayerSize1 = 200
         self.hiddenLayerSize2 = 100
-        self.batchSize = 200
+        self.batchSize = 120
         self.learningRate = 0.1
 
         self.W1 = nn.Parameter(self.inputSize, self.hiddenLayerSize1)
